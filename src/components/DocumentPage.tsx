@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Access } from "@/lib/access";
 import { api, ApiError } from "@/lib/api";
 import { editorExtensions } from "@/lib/editor-extensions";
+import { htmlToMarkdown, markdownFilename } from "@/lib/export";
 import { AppHeader } from "./AppHeader";
 import { RoleBadge } from "./RoleBadge";
 import { ShareDialog } from "./ShareDialog";
@@ -172,6 +173,14 @@ function Editor({ doc }: { doc: Doc }) {
         />
         <SaveIndicator status={status} editable={editable} />
         <RoleBadge access={doc.access} />
+        <button
+          onClick={() => editor && downloadMarkdown(title || doc.title, editor.getHTML())}
+          disabled={!editor}
+          title="Download as Markdown"
+          className="hidden shrink-0 rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-50 sm:block"
+        >
+          Export .md
+        </button>
         {doc.access === "owner" && (
           <button
             onClick={() => setShareOpen(true)}
@@ -223,6 +232,16 @@ function Editor({ doc }: { doc: Doc }) {
       {shareOpen && <ShareDialog docId={doc.id} onClose={() => setShareOpen(false)} />}
     </>
   );
+}
+
+function downloadMarkdown(title: string, html: string) {
+  const blob = new Blob([htmlToMarkdown(html)], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = markdownFilename(title);
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function SaveIndicator({ status, editable }: { status: SaveStatus; editable: boolean }) {

@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ajaia Docs
 
-## Getting Started
+A lightweight collaborative document editor: create and edit rich-text documents, import files, and share them with other users as **viewers** or **editors**.
 
-First, run the development server:
+**Live app:** https://ajaia-docs-peach-gamma.vercel.app
+
+## Demo accounts
+
+All passwords are `demo1234`. The login page also has one-click "Sign in as…" buttons.
+
+| User  | Email              | What to try                                                    |
+| ----- | ------------------ | -------------------------------------------------------------- |
+| Alice | `alice@ajaia.test` | Owns the sample docs; share them, change roles, revoke access  |
+| Bob   | `bob@ajaia.test`   | Has **edit** access to "Q3 Planning"                           |
+| Carol | `carol@ajaia.test` | Has **view-only** access to "Team Handbook"                    |
+
+Suggested review flow (about 3 minutes): sign in as Alice → create a document, format it, rename it, refresh → **Share** it with `bob@ajaia.test` → sign out, sign in as Bob → it appears under **Shared with me** → sign in as Carol to see read-only mode.
+
+## Features
+
+- **Documents:** create, rename (click the title), edit, delete (owner only). Changes **autosave** about a second after you stop typing. The header shows the save status.
+- **Rich text:** bold, italic, underline, strikethrough, H1–H3, bulleted and numbered lists, quotes, undo/redo. Standard keyboard shortcuts (Ctrl/Cmd+B/I/U, Markdown-style `# ` and `- `) work.
+- **File import:** **`.txt`, `.md`, `.docx`, max 2 MB** → becomes a new editable document. Other file types are rejected with a clear message.
+- **Sharing:** the owner shares by email with **Can edit** or **Can view**, can change roles, and can remove access. The dashboard separates **My documents** from **Shared with me**, and role badges are shown everywhere.
+- **Export:** download any document as Markdown.
+- **Conflict protection:** if someone else saved the document after you opened it, your save is rejected and you're asked to reload, instead of their changes being silently overwritten.
+
+## Run locally
+
+Requires **Node.js 20+**.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# open http://localhost:3000 and sign in with a demo account
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+You don't need to set up a database. With no `DATABASE_URL`, the app uses **PGlite** (Postgres compiled to WebAssembly, running inside Node) and stores data in `./.pglite`. It creates the tables and loads the demo data automatically on first start. Delete `.pglite/` to reset.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To use a real Postgres database instead, copy `.env.example` to `.env.local` and set:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+DATABASE_URL="postgresql://..."   # e.g. a free Neon database
+SESSION_SECRET="long-random-string"
+npm run db:migrate                # creates the tables and loads demo data (safe to re-run)
+npm run dev
+```
 
-## Learn More
+### Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command             | Purpose                                                       |
+| ------------------- | ------------------------------------------------------------- |
+| `npm test`          | Unit + integration tests (Vitest, in-memory Postgres via PGlite) |
+| `npm run typecheck` | TypeScript                                                    |
+| `npm run lint`      | ESLint                                                        |
+| `npm run db:migrate`| Create tables and load demo data in `DATABASE_URL`            |
+| `npm run db:generate` | Generate a new migration after editing `src/db/schema.ts`   |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Hosted on **Vercel** with a **Neon** Postgres database, both on free tiers. Set `DATABASE_URL` and `SESSION_SECRET` in Vercel. The `vercel-build` script creates the tables and loads the demo data before `next build`, so every deploy is ready to use.
 
-## Deploy on Vercel
+## Known limitations
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- No real-time co-editing. Concurrent edits are detected (the second save is rejected and asks for a reload) but not merged.
+- No sign-up flow; accounts are pre-made (seeded).
+- Imports keep headings, paragraphs, bold/italic/underline, lists, quotes and links. Images, tables and colors in `.docx` files are dropped.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+More detail: [ARCHITECTURE.md](ARCHITECTURE.md) · [AI_WORKFLOW.md](AI_WORKFLOW.md) · [SUBMISSION.md](SUBMISSION.md)
